@@ -1,0 +1,19 @@
+{
+  "name": "trust-rent",
+  "version": "1.0.0",
+  "description": "Piattaforma web che mette in contatto affittuari e proprietari",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n client,server -c blue,green \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "migrate": "npm run migrate --prefix server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
