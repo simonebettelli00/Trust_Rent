@@ -93,6 +93,15 @@ export async function getOne(req, res, next) {
   }
 }
 
+export async function getAvailability(req, res, next) {
+  try {
+    const availability = await propertyService.getAvailability(Number(req.params.id));
+    res.json({ availability });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function uploadImages(req, res, next) {
   try {
     const propertyId = Number(req.params.id);

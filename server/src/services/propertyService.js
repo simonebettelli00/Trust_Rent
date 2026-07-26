@@ -1,4 +1,5 @@
 import * as propertyModel from "../models/propertyModel.js";
+import * as availabilityModel from "../models/availabilityModel.js";
 import { geocodeAddress } from "./geocodingService.js";
 import AppError from "../utils/AppError.js";
 
@@ -73,6 +74,11 @@ export async function getProperty(id) {
     throw new AppError(404, "PROPERTY_NOT_FOUND", "Immobile non trovato");
   }
   return property;
+}
+
+export async function getAvailability(id) {
+  await getProperty(id);
+  return availabilityModel.findByProperty(id);
 }
 
 export async function getOwnerProperty(id, ownerId) {

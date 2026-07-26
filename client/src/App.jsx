@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import TenantApp from "./pages/TenantApp";
+import PropertyDetail from "./pages/PropertyDetail";
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import PropertyForm from "./pages/owner/PropertyForm";
 
@@ -16,6 +17,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/property/:id" element={<PropertyDetail />} />
         <Route
           path="/app"
           element={

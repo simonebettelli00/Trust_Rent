@@ -54,6 +54,11 @@ export async function getOne(id) {
   return parse(res);
 }
 
+export async function getAvailability(id) {
+  const res = await fetch(`${API_URL}/api/properties/${id}/availability`);
+  return parse(res);
+}
+
 export async function create(token, property) {
   const res = await fetch(`${API_URL}/api/properties`, {
     method: "POST",

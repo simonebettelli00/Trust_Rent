@@ -12,6 +12,7 @@
   "dependencies": {
     "leaflet": "^1.9.4",
     "react": "^19.2.7",
+    "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.7",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.1"

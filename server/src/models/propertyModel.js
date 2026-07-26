@@ -129,7 +129,13 @@ export async function remove(id) {
 }
 
 export async function findById(id) {
-  const result = await pool.query("SELECT * FROM properties WHERE id = $1", [id]);
+  const result = await pool.query(
+    `SELECT p.*, u.full_name AS owner_name
+     FROM properties p
+     JOIN users u ON u.id = p.owner_id
+     WHERE p.id = $1`,
+    [id]
+  );
   return result.rows[0] || null;
 }
 

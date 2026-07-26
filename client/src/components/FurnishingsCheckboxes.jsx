@@ -1,4 +1,4 @@
-const OPTIONS = [
+export const OPTIONS = [
   { value: "arredato", label: "Arredato" },
   { value: "lavatrice", label: "Lavatrice" },
   { value: "aria_condizionata", label: "Aria condizionata" },

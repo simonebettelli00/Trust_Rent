@@ -9,6 +9,7 @@ const ownerOnly = [authRequired, requireRole("owner")];
 router.get("/mine", ...ownerOnly, propertyController.getMine);
 router.get("/", propertyController.search);
 router.get("/:id", propertyController.getOne);
+router.get("/:id/availability", propertyController.getAvailability);
 
 router.post("/", ...ownerOnly, propertyController.create);
 router.put("/:id", ...ownerOnly, propertyController.update);
