@@ -167,7 +167,13 @@ function PropertyDetail() {
             )}
           </Card>
 
-          <PropertyMiniMap lat={property.lat} lng={property.lng} />
+          {property.lat != null && property.lng != null ? (
+            <PropertyMiniMap lat={property.lat} lng={property.lng} />
+          ) : (
+            <div className="w-full h-64 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 text-sm">
+              Posizione non ancora disponibile su mappa
+            </div>
+          )}
 
           <div ref={calendarRef}>
             <Card>

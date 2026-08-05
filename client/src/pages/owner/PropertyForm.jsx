@@ -47,6 +47,7 @@ function PropertyForm() {
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
+  const [geocodePrecision, setGeocodePrecision] = useState(null);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -69,6 +70,11 @@ function PropertyForm() {
           availableFrom: property.available_from ? property.available_from.slice(0, 10) : "",
         });
         setImages(images);
+        setGeocodePrecision(
+          property.lat != null && property.lng != null
+            ? property.geocode_precision || "civico"
+            : "none"
+        );
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -89,7 +95,12 @@ function PropertyForm() {
     setSubmitting(true);
     try {
       if (isEdit) {
-        await propertiesApi.update(token, id, form);
+        const { property } = await propertiesApi.update(token, id, form);
+        setGeocodePrecision(
+          property.lat != null && property.lng != null
+            ? property.geocode_precision || "civico"
+            : "none"
+        );
       } else {
         const { property } = await propertiesApi.create(token, form);
         navigate(`/owner/property/${property.id}/edit`, { replace: true });
@@ -215,6 +226,26 @@ function PropertyForm() {
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {error}
+            </p>
+          )}
+
+          {geocodePrecision === "none" && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Non è stato possibile localizzare questo indirizzo sulla mappa. L'immobile è stato
+              salvato comunque: riprova modificando indirizzo/città/CAP, oppure verrà posizionato
+              manualmente in futuro.
+            </p>
+          )}
+          {geocodePrecision === "via" && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Il civico esatto non è mappato: la posizione è approssimata alla via. Potrai
+              posizionarla manualmente in futuro.
+            </p>
+          )}
+          {geocodePrecision === "comune" && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Indirizzo non trovato: la posizione è approssimata al centro del comune. Potrai
+              posizionarla manualmente in futuro.
             </p>
           )}
 

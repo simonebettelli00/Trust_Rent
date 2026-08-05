@@ -9,6 +9,7 @@ export async function create({
   postalCode,
   lat,
   lng,
+  geocodePrecision,
   floor,
   sqm,
   numRooms,
@@ -21,12 +22,12 @@ export async function create({
   const result = await pool.query(
     `INSERT INTO properties (
        owner_id, title, description, address, city, postal_code,
-       lat, lng, geom, floor, sqm, num_rooms, num_bathrooms,
+       lat, lng, geom, geocode_precision, floor, sqm, num_rooms, num_bathrooms,
        furnishings, monthly_price, deposit, available_from
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
-       $7, $8, ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography, $9, $10, $11, $12,
-       $13, $14, $15, $16
+       $7, $8, ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography, $9, $10, $11, $12, $13,
+       $14, $15, $16, $17
      )
      RETURNING *`,
     [
@@ -38,6 +39,7 @@ export async function create({
       postalCode || null,
       lat,
       lng,
+      geocodePrecision || null,
       floor || null,
       sqm || null,
       numRooms || null,
@@ -60,6 +62,7 @@ export async function update(id, fields) {
     postalCode,
     lat,
     lng,
+    geocodePrecision,
     floor,
     sqm,
     numRooms,
@@ -81,17 +84,18 @@ export async function update(id, fields) {
        lat = $6,
        lng = $7,
        geom = ST_SetSRID(ST_MakePoint($7, $6), 4326)::geography,
-       floor = $8,
-       sqm = $9,
-       num_rooms = $10,
-       num_bathrooms = $11,
-       furnishings = $12,
-       monthly_price = $13,
-       deposit = $14,
-       available_from = $15,
-       is_published = $16,
+       geocode_precision = $8,
+       floor = $9,
+       sqm = $10,
+       num_rooms = $11,
+       num_bathrooms = $12,
+       furnishings = $13,
+       monthly_price = $14,
+       deposit = $15,
+       available_from = $16,
+       is_published = $17,
        updated_at = now()
-     WHERE id = $17
+     WHERE id = $18
      RETURNING *`,
     [
       title,
@@ -101,6 +105,7 @@ export async function update(id, fields) {
       postalCode || null,
       lat,
       lng,
+      geocodePrecision || null,
       floor || null,
       sqm || null,
       numRooms || null,

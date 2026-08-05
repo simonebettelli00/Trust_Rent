@@ -82,6 +82,21 @@ function OwnerDashboard() {
               <p className="text-sm text-gray-500">
                 {property.address}, {property.city}
               </p>
+              {(property.lat == null || property.lng == null) && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  Posizione non trovata: riprova modificando l'indirizzo
+                </p>
+              )}
+              {property.lat != null && property.geocode_precision === "via" && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  Posizione approssimata alla via (civico non mappato)
+                </p>
+              )}
+              {property.lat != null && property.geocode_precision === "comune" && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  Posizione approssimata al centro del comune
+                </p>
+              )}
               <p className="text-sm text-gray-700 font-medium">
                 € {Number(property.monthly_price).toLocaleString("it-IT")}/mese
               </p>

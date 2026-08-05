@@ -19,8 +19,18 @@ function validatePayload(payload) {
 
 export async function createProperty(ownerId, payload) {
   validatePayload(payload);
-  const { lat, lng } = await geocodeAddress(payload.address, payload.city);
-  return propertyModel.create({ ownerId, ...payload, lat, lng });
+  const coords = await geocodeAddress({
+    address: payload.address,
+    city: payload.city,
+    postalCode: payload.postalCode,
+  });
+  return propertyModel.create({
+    ownerId,
+    ...payload,
+    lat: coords?.lat ?? null,
+    lng: coords?.lng ?? null,
+    geocodePrecision: coords?.precision ?? null,
+  });
 }
 
 export async function updateProperty(id, ownerId, payload) {
@@ -33,15 +43,30 @@ export async function updateProperty(id, ownerId, payload) {
     throw new AppError(403, "FORBIDDEN", "Non puoi modificare un immobile che non è tuo");
   }
 
-  let { lat, lng } = existing;
-  if (payload.address !== existing.address || payload.city !== existing.city) {
-    ({ lat, lng } = await geocodeAddress(payload.address, payload.city));
+  let lat = existing.lat;
+  let lng = existing.lng;
+  let geocodePrecision = existing.geocode_precision;
+  const addressChanged =
+    payload.address !== existing.address ||
+    payload.city !== existing.city ||
+    (payload.postalCode || null) !== existing.postal_code;
+
+  if (addressChanged) {
+    const coords = await geocodeAddress({
+      address: payload.address,
+      city: payload.city,
+      postalCode: payload.postalCode,
+    });
+    lat = coords?.lat ?? null;
+    lng = coords?.lng ?? null;
+    geocodePrecision = coords?.precision ?? null;
   }
 
   return propertyModel.update(id, {
     ...payload,
     lat,
     lng,
+    geocodePrecision,
     isPublished: payload.isPublished ?? existing.is_published,
   });
 }
