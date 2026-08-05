@@ -4,6 +4,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { useAuth } from "../context/AuthContext";
 import * as propertiesApi from "../api/propertiesApi";
+import * as conversationsApi from "../api/conversationsApi";
 import { OPTIONS as FURNISHING_OPTIONS } from "../components/FurnishingsCheckboxes";
 import ImageGallery from "../components/ImageGallery";
 import PropertyMiniMap from "../components/PropertyMiniMap";
@@ -30,7 +31,7 @@ function groupAvailabilityByStatus(availability) {
 function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const calendarRef = useRef(null);
 
   const [property, setProperty] = useState(null);
@@ -38,6 +39,7 @@ function PropertyDetail() {
   const [availability, setAvailability] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [contacting, setContacting] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -52,8 +54,25 @@ function PropertyDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  function handleContact() {
-    navigate(user ? "/messages" : "/login");
+  async function handleContact() {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (user.role !== "tenant") {
+      navigate("/messages");
+      return;
+    }
+    setContacting(true);
+    setError("");
+    try {
+      const { conversation } = await conversationsApi.create(token, property.id);
+      navigate(`/messages?conversation=${conversation.id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setContacting(false);
+    }
   }
 
   function handleRequestAppointment() {
@@ -185,7 +204,7 @@ function PropertyDetail() {
               € {Number(property.monthly_price).toLocaleString("it-IT")}
               <span className="text-sm text-gray-500 font-normal">/mese</span>
             </p>
-            <Button variant="primary" onClick={handleContact}>
+            <Button variant="primary" onClick={handleContact} loading={contacting}>
               Contatta il proprietario
             </Button>
             <Button variant="outline" onClick={handleRequestAppointment}>

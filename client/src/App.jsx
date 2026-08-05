@@ -8,6 +8,7 @@ import TenantApp from "./pages/TenantApp";
 import PropertyDetail from "./pages/PropertyDetail";
 import OwnerDashboard from "./pages/owner/OwnerDashboard";
 import PropertyForm from "./pages/owner/PropertyForm";
+import Messages from "./pages/Messages";
 
 function App() {
   return (
@@ -18,6 +19,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/property/:id" element={<PropertyDetail />} />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/app"
           element={

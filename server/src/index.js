@@ -1,11 +1,14 @@
 import express from "express";
+import http from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import propertyRoutes from "./routes/propertyRoutes.js";
 import geocodeRoutes from "./routes/geocodeRoutes.js";
+import conversationRoutes from "./routes/conversationRoutes.js";
 import { UPLOADS_DIR } from "./middleware/upload.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
+import initSocket from "./socket/index.js";
 
 dotenv.config();
 
@@ -23,10 +26,14 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/geocode", geocodeRoutes);
+app.use("/api/conversations", conversationRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+const httpServer = http.createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`Server in ascolto su http://localhost:${PORT}`);
 });
