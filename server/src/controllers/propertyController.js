@@ -6,6 +6,7 @@ function mapPayload(body) {
   return {
     title: body.title,
     description: body.description,
+    rentalType: body.rental_type,
     address: body.address,
     city: body.city,
     postalCode: body.postal_code,

@@ -4,7 +4,7 @@ import { geocodeAddress } from "./geocodingService.js";
 import AppError from "../utils/AppError.js";
 
 function validatePayload(payload) {
-  const { title, address, city, monthlyPrice } = payload;
+  const { title, address, city, monthlyPrice, rentalType } = payload;
   if (!title || !address || !city || monthlyPrice === undefined || monthlyPrice === null) {
     throw new AppError(
       400,
@@ -14,6 +14,13 @@ function validatePayload(payload) {
   }
   if (Number.isNaN(Number(monthlyPrice)) || Number(monthlyPrice) <= 0) {
     throw new AppError(400, "INVALID_PRICE", "Il canone mensile deve essere un numero positivo");
+  }
+  if (!["long", "short"].includes(rentalType)) {
+    throw new AppError(
+      400,
+      "INVALID_RENTAL_TYPE",
+      "Il tipo di affitto deve essere 'long' (lungo termine) o 'short' (breve termine)"
+    );
   }
 }
 

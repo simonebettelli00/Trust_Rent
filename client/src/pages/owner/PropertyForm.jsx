@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import * as propertiesApi from "../../api/propertiesApi";
@@ -7,10 +7,12 @@ import Input from "../../components/Input";
 import Button from "../../components/Button";
 import FurnishingsCheckboxes from "../../components/FurnishingsCheckboxes";
 import ImageUploader from "../../components/ImageUploader";
+import SlotManager from "../../components/SlotManager";
 
 const EMPTY_FORM = {
   title: "",
   description: "",
+  rentalType: "long",
   address: "",
   city: "",
   postalCode: "",
@@ -43,20 +45,22 @@ function PropertyForm() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [images, setImages] = useState([]);
+  const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [geocodePrecision, setGeocodePrecision] = useState(null);
+  const originalRentalType = useRef(null);
 
   useEffect(() => {
     if (!isEdit) return;
-    propertiesApi
-      .getOne(id)
-      .then(({ property, images }) => {
+    Promise.all([propertiesApi.getOne(id), propertiesApi.getSlots(id)])
+      .then(([{ property, images }, { slots }]) => {
         setForm({
           title: property.title,
           description: property.description || "",
+          rentalType: property.rental_type || "long",
           address: property.address,
           city: property.city,
           postalCode: property.postal_code || "",
@@ -70,6 +74,8 @@ function PropertyForm() {
           availableFrom: property.available_from ? property.available_from.slice(0, 10) : "",
         });
         setImages(images);
+        setSlots(slots);
+        originalRentalType.current = property.rental_type || "long";
         setGeocodePrecision(
           property.lat != null && property.lng != null
             ? property.geocode_precision || "civico"
@@ -91,11 +97,24 @@ function PropertyForm() {
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
+    if (
+      isEdit &&
+      originalRentalType.current &&
+      form.rentalType !== originalRentalType.current &&
+      slots.length > 0
+    ) {
+      const confirmed = confirm(
+        "Stai cambiando il tipo di affitto: le fasce di visita già create resteranno salvate ma non saranno più mostrate finché l'immobile è impostato su 'breve termine'. Continuare?"
+      );
+      if (!confirmed) return;
+    }
+
     setError("");
     setSubmitting(true);
     try {
       if (isEdit) {
         const { property } = await propertiesApi.update(token, id, form);
+        originalRentalType.current = property.rental_type;
         setGeocodePrecision(
           property.lat != null && property.lng != null
             ? property.geocode_precision || "civico"
@@ -136,6 +155,35 @@ function PropertyForm() {
             onChange={handleChange}
             error={fieldErrors.title}
           />
+
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">Tipo di affitto</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, rentalType: "long" }))}
+                className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+                  form.rentalType === "long"
+                    ? "border-primary-600 bg-primary-50 text-primary-700"
+                    : "border-gray-300 text-gray-600"
+                }`}
+              >
+                Lungo termine
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, rentalType: "short" }))}
+                className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+                  form.rentalType === "short"
+                    ? "border-secondary-600 bg-secondary-50 text-secondary-700"
+                    : "border-gray-300 text-gray-600"
+                }`}
+              >
+                Breve termine
+              </button>
+            </div>
+          </div>
+
           <label className="flex flex-col gap-1 text-left">
             <span className="text-sm font-medium text-gray-700">Descrizione</span>
             <textarea
@@ -198,7 +246,11 @@ function PropertyForm() {
             onChange={(furnishings) => setForm((prev) => ({ ...prev, furnishings }))}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div
+            className={`grid grid-cols-1 gap-4 ${
+              form.rentalType === "long" ? "sm:grid-cols-3" : "sm:grid-cols-2"
+            }`}
+          >
             <Input
               name="monthlyPrice"
               type="number"
@@ -214,14 +266,23 @@ function PropertyForm() {
               value={form.deposit}
               onChange={handleChange}
             />
-            <Input
-              name="availableFrom"
-              type="date"
-              label="Disponibile da"
-              value={form.availableFrom}
-              onChange={handleChange}
-            />
+            {form.rentalType === "long" && (
+              <Input
+                name="availableFrom"
+                type="date"
+                label="Disponibile da"
+                value={form.availableFrom}
+                onChange={handleChange}
+              />
+            )}
           </div>
+
+          {form.rentalType === "short" && (
+            <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+              Gli immobili a breve termine sono sempre disponibili, tranne nei periodi già
+              prenotati e accettati dal proprietario.
+            </p>
+          )}
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -262,6 +323,17 @@ function PropertyForm() {
             onImagesChange={setImages}
           />
         </div>
+
+        {form.rentalType === "long" && (
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <SlotManager
+              propertyId={id ? Number(id) : null}
+              token={token}
+              slots={slots}
+              onSlotsChange={setSlots}
+            />
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -16,6 +16,7 @@ function toApiPayload(property) {
   return {
     title: property.title,
     description: property.description,
+    rental_type: property.rentalType,
     address: property.address,
     city: property.city,
     postal_code: property.postalCode,
@@ -132,4 +133,29 @@ export async function reorderImages(token, id, order) {
 
 export function resolveImageUrl(url) {
   return url.startsWith("http") ? url : `${API_URL}${url}`;
+}
+
+export async function getSlots(id) {
+  const res = await fetch(`${API_URL}/api/properties/${id}/slots`);
+  return parse(res);
+}
+
+export async function createSlot(token, id, { date, startTime, endTime }) {
+  const res = await fetch(`${API_URL}/api/properties/${id}/slots`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify({ date, start_time: startTime, end_time: endTime }),
+  });
+  return parse(res);
+}
+
+export async function deleteSlot(token, id, slotId) {
+  const res = await fetch(`${API_URL}/api/properties/${id}/slots/${slotId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error?.message || "Errore di rete");
+  }
 }

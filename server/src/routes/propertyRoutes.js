@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as propertyController from "../controllers/propertyController.js";
+import * as ownerSlotController from "../controllers/ownerSlotController.js";
 import { authRequired, requireRole } from "../middleware/auth.js";
 import upload from "../middleware/upload.js";
 
@@ -19,5 +20,9 @@ router.delete("/:id", ...ownerOnly, propertyController.remove);
 router.post("/:id/images", ...ownerOnly, upload.array("images", 10), propertyController.uploadImages);
 router.delete("/:id/images/:imageId", ...ownerOnly, propertyController.deleteImage);
 router.put("/:id/images/order", ...ownerOnly, propertyController.reorderImages);
+
+router.get("/:id/slots", ownerSlotController.list);
+router.post("/:id/slots", ...ownerOnly, ownerSlotController.create);
+router.delete("/:id/slots/:slotId", ...ownerOnly, ownerSlotController.remove);
 
 export default router;

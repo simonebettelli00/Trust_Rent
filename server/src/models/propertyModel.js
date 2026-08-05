@@ -4,6 +4,7 @@ export async function create({
   ownerId,
   title,
   description,
+  rentalType,
   address,
   city,
   postalCode,
@@ -21,19 +22,20 @@ export async function create({
 }) {
   const result = await pool.query(
     `INSERT INTO properties (
-       owner_id, title, description, address, city, postal_code,
+       owner_id, title, description, rental_type, address, city, postal_code,
        lat, lng, geom, geocode_precision, floor, sqm, num_rooms, num_bathrooms,
        furnishings, monthly_price, deposit, available_from
      ) VALUES (
-       $1, $2, $3, $4, $5, $6,
-       $7, $8, ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography, $9, $10, $11, $12, $13,
-       $14, $15, $16, $17
+       $1, $2, $3, $4, $5, $6, $7,
+       $8, $9, ST_SetSRID(ST_MakePoint($9, $8), 4326)::geography, $10, $11, $12, $13, $14,
+       $15, $16, $17, $18
      )
      RETURNING *`,
     [
       ownerId,
       title,
       description || null,
+      rentalType,
       address,
       city,
       postalCode || null,
@@ -57,6 +59,7 @@ export async function update(id, fields) {
   const {
     title,
     description,
+    rentalType,
     address,
     city,
     postalCode,
@@ -78,28 +81,30 @@ export async function update(id, fields) {
     `UPDATE properties SET
        title = $1,
        description = $2,
-       address = $3,
-       city = $4,
-       postal_code = $5,
-       lat = $6,
-       lng = $7,
-       geom = ST_SetSRID(ST_MakePoint($7, $6), 4326)::geography,
-       geocode_precision = $8,
-       floor = $9,
-       sqm = $10,
-       num_rooms = $11,
-       num_bathrooms = $12,
-       furnishings = $13,
-       monthly_price = $14,
-       deposit = $15,
-       available_from = $16,
-       is_published = $17,
+       rental_type = $3,
+       address = $4,
+       city = $5,
+       postal_code = $6,
+       lat = $7,
+       lng = $8,
+       geom = ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography,
+       geocode_precision = $9,
+       floor = $10,
+       sqm = $11,
+       num_rooms = $12,
+       num_bathrooms = $13,
+       furnishings = $14,
+       monthly_price = $15,
+       deposit = $16,
+       available_from = $17,
+       is_published = $18,
        updated_at = now()
-     WHERE id = $18
+     WHERE id = $19
      RETURNING *`,
     [
       title,
       description || null,
+      rentalType,
       address,
       city,
       postalCode || null,
