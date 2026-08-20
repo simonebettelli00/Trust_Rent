@@ -13,16 +13,6 @@ function generateToken(user) {
 }
 
 export async function register({ email, password, fullName, phone, role }) {
-  if (!email || !password || !fullName || !role) {
-    throw new AppError(400, "MISSING_FIELDS", "Email, password, nome e ruolo sono obbligatori");
-  }
-  if (!["tenant", "owner"].includes(role)) {
-    throw new AppError(400, "INVALID_ROLE", "Il ruolo deve essere 'tenant' o 'owner'");
-  }
-  if (password.length < 8) {
-    throw new AppError(400, "WEAK_PASSWORD", "La password deve avere almeno 8 caratteri");
-  }
-
   const existing = await findByEmail(email);
   if (existing) {
     throw new AppError(409, "EMAIL_TAKEN", "Email già registrata");
@@ -36,10 +26,6 @@ export async function register({ email, password, fullName, phone, role }) {
 }
 
 export async function login({ email, password }) {
-  if (!email || !password) {
-    throw new AppError(400, "MISSING_FIELDS", "Email e password sono obbligatori");
-  }
-
   const userRow = await findByEmail(email);
   if (!userRow) {
     throw new AppError(401, "INVALID_CREDENTIALS", "Credenziali non valide");

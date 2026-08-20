@@ -2,15 +2,6 @@ import * as ownerSlotModel from "../models/ownerSlotModel.js";
 import * as propertyService from "./propertyService.js";
 import AppError from "../utils/AppError.js";
 
-function validateSlotPayload({ date, startTime, endTime }) {
-  if (!date || !startTime || !endTime) {
-    throw new AppError(400, "MISSING_FIELDS", "Data, ora inizio e ora fine sono obbligatorie");
-  }
-  if (startTime >= endTime) {
-    throw new AppError(400, "INVALID_TIME_RANGE", "L'ora di fine deve essere successiva all'ora di inizio");
-  }
-}
-
 export async function createSlot(propertyId, ownerId, payload) {
   const property = await propertyService.getOwnerProperty(propertyId, ownerId);
   if (property.rental_type !== "long") {
@@ -20,7 +11,6 @@ export async function createSlot(propertyId, ownerId, payload) {
       "Le fasce di visita sono disponibili solo per gli immobili a lungo termine"
     );
   }
-  validateSlotPayload(payload);
 
   return ownerSlotModel.create({
     propertyId,

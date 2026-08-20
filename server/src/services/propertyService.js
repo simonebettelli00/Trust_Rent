@@ -3,29 +3,7 @@ import * as availabilityModel from "../models/availabilityModel.js";
 import { geocodeAddress } from "./geocodingService.js";
 import AppError from "../utils/AppError.js";
 
-function validatePayload(payload) {
-  const { title, address, city, monthlyPrice, rentalType } = payload;
-  if (!title || !address || !city || monthlyPrice === undefined || monthlyPrice === null) {
-    throw new AppError(
-      400,
-      "MISSING_FIELDS",
-      "Titolo, indirizzo, città e canone mensile sono obbligatori"
-    );
-  }
-  if (Number.isNaN(Number(monthlyPrice)) || Number(monthlyPrice) <= 0) {
-    throw new AppError(400, "INVALID_PRICE", "Il canone mensile deve essere un numero positivo");
-  }
-  if (!["long", "short"].includes(rentalType)) {
-    throw new AppError(
-      400,
-      "INVALID_RENTAL_TYPE",
-      "Il tipo di affitto deve essere 'long' (lungo termine) o 'short' (breve termine)"
-    );
-  }
-}
-
 export async function createProperty(ownerId, payload) {
-  validatePayload(payload);
   const coords = await geocodeAddress({
     address: payload.address,
     city: payload.city,
@@ -41,7 +19,6 @@ export async function createProperty(ownerId, payload) {
 }
 
 export async function updateProperty(id, ownerId, payload) {
-  validatePayload(payload);
   const existing = await propertyModel.findById(id);
   if (!existing) {
     throw new AppError(404, "PROPERTY_NOT_FOUND", "Immobile non trovato");
@@ -125,34 +102,8 @@ export function listOwnerProperties(ownerId) {
   return propertyModel.findByOwner(ownerId);
 }
 
-function parseBound(value, name) {
-  const parsed = Number(value);
-  if (value === undefined || Number.isNaN(parsed)) {
-    throw new AppError(400, "INVALID_BOUNDS", `Il parametro ${name} è obbligatorio ed è numerico`);
-  }
-  return parsed;
-}
-
-function parseOptionalNumber(value) {
-  if (value === undefined || value === "") return undefined;
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) return undefined;
-  return parsed;
-}
-
+// north/south/east/west/minPrice/maxPrice/rooms sono già validati e
+// coercizzati a number da propertySearchQuerySchema (middleware validate).
 export function searchProperties(query) {
-  const north = parseBound(query.north, "north");
-  const south = parseBound(query.south, "south");
-  const east = parseBound(query.east, "east");
-  const west = parseBound(query.west, "west");
-
-  return propertyModel.searchInBounds({
-    north,
-    south,
-    east,
-    west,
-    minPrice: parseOptionalNumber(query.minPrice),
-    maxPrice: parseOptionalNumber(query.maxPrice),
-    rooms: parseOptionalNumber(query.rooms),
-  });
+  return propertyModel.searchInBounds(query);
 }

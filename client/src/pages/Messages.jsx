@@ -7,11 +7,13 @@ import * as conversationsApi from "../api/conversationsApi";
 import ConversationListItem from "../components/ConversationListItem";
 import MessageBubble from "../components/MessageBubble";
 import Button from "../components/Button";
+import Skeleton from "../components/Skeleton";
 
 function Messages() {
   const { user, token } = useAuth();
   const { socket, connected } = useSocket();
-  const { conversations, refresh, markConversationReadLocally } = useConversations();
+  const { conversations, loading: loadingConversations, refresh, markConversationReadLocally } =
+    useConversations();
   const [searchParams] = useSearchParams();
 
   const [activeId, setActiveId] = useState(null);
@@ -111,7 +113,17 @@ function Messages() {
         <h1 className="px-4 py-3 font-semibold text-gray-900 border-b border-gray-100">
           Messaggi
         </h1>
-        {conversations.length === 0 ? (
+        {loadingConversations ? (
+          <div className="flex flex-col gap-1 p-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col gap-2 px-2 py-3">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            ))}
+          </div>
+        ) : conversations.length === 0 ? (
           <p className="p-4 text-sm text-gray-500">Nessuna conversazione ancora.</p>
         ) : (
           conversations.map((conversation) => (
@@ -150,7 +162,11 @@ function Messages() {
 
             <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2">
               {loadingMessages ? (
-                <p className="text-sm text-gray-400">Caricamento messaggi...</p>
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-10 w-2/3 rounded-2xl self-start" />
+                  <Skeleton className="h-10 w-1/2 rounded-2xl self-end" />
+                  <Skeleton className="h-10 w-3/5 rounded-2xl self-start" />
+                </div>
               ) : (
                 messages.map((message) => (
                   <MessageBubble

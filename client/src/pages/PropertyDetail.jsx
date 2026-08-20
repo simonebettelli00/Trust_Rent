@@ -10,6 +10,7 @@ import ImageGallery from "../components/ImageGallery";
 import PropertyMiniMap from "../components/PropertyMiniMap";
 import Card from "../components/Card";
 import Button from "../components/Button";
+import Skeleton from "../components/Skeleton";
 
 const FURNISHING_LABELS = Object.fromEntries(FURNISHING_OPTIONS.map((o) => [o.value, o.label]));
 
@@ -83,7 +84,21 @@ function PropertyDetail() {
     calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  if (loading) return <p className="p-6 text-gray-500">Caricamento...</p>;
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-8 flex-1 w-full flex flex-col gap-8">
+        <Skeleton className="w-full h-80 rounded-2xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
+    );
+  }
   if (error) {
     return (
       <p className="p-6 text-red-600 bg-red-50 border border-red-200 rounded-lg m-6">{error}</p>

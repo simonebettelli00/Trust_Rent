@@ -4,12 +4,15 @@ import { useAuth } from "../../context/AuthContext";
 import * as propertiesApi from "../../api/propertiesApi";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
+import Skeleton from "../../components/Skeleton";
+import Modal from "../../components/Modal";
 
 function OwnerDashboard() {
   const { token } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [propertyToDelete, setPropertyToDelete] = useState(null);
 
   useEffect(() => {
     load();
@@ -36,13 +39,15 @@ function OwnerDashboard() {
     }
   }
 
-  async function handleDelete(property) {
-    if (!confirm(`Eliminare l'immobile "${property.title}"?`)) return;
+  async function confirmDelete() {
+    if (!propertyToDelete) return;
     try {
-      await propertiesApi.remove(token, property.id);
+      await propertiesApi.remove(token, propertyToDelete.id);
       load();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setPropertyToDelete(null);
     }
   }
 
@@ -58,7 +63,23 @@ function OwnerDashboard() {
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
 
       {loading ? (
-        <p className="text-gray-500">Caricamento...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <Skeleton className="h-5 w-2/3" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-1/3" />
+              <div className="flex gap-2 mt-auto">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-9 w-20" />
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : properties.length === 0 ? (
         <Card className="text-center text-gray-500">
           Non hai ancora pubblicato nessun immobile.
@@ -107,7 +128,7 @@ function OwnerDashboard() {
                 <Button variant="outline" onClick={() => handleTogglePublish(property)}>
                   {property.is_published ? "Nascondi" : "Pubblica"}
                 </Button>
-                <Button variant="outline" onClick={() => handleDelete(property)}>
+                <Button variant="outline" onClick={() => setPropertyToDelete(property)}>
                   Elimina
                 </Button>
               </div>
@@ -115,6 +136,17 @@ function OwnerDashboard() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={Boolean(propertyToDelete)}
+        title="Eliminare l'immobile?"
+        confirmLabel="Elimina"
+        variant="primary"
+        onConfirm={confirmDelete}
+        onCancel={() => setPropertyToDelete(null)}
+      >
+        Stai per eliminare "{propertyToDelete?.title}". L'operazione non è reversibile.
+      </Modal>
     </div>
   );
 }

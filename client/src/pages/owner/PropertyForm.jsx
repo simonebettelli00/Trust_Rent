@@ -8,6 +8,8 @@ import Button from "../../components/Button";
 import FurnishingsCheckboxes from "../../components/FurnishingsCheckboxes";
 import ImageUploader from "../../components/ImageUploader";
 import SlotManager from "../../components/SlotManager";
+import Skeleton from "../../components/Skeleton";
+import Modal from "../../components/Modal";
 
 const EMPTY_FORM = {
   title: "",
@@ -51,6 +53,7 @@ function PropertyForm() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [geocodePrecision, setGeocodePrecision] = useState(null);
+  const [showRentalTypeConfirm, setShowRentalTypeConfirm] = useState(false);
   const originalRentalType = useRef(null);
 
   useEffect(() => {
@@ -91,7 +94,7 @@ function PropertyForm() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
     const errors = validate(form);
     setFieldErrors(errors);
@@ -103,12 +106,15 @@ function PropertyForm() {
       form.rentalType !== originalRentalType.current &&
       slots.length > 0
     ) {
-      const confirmed = confirm(
-        "Stai cambiando il tipo di affitto: le fasce di visita già create resteranno salvate ma non saranno più mostrate finché l'immobile è impostato su 'breve termine'. Continuare?"
-      );
-      if (!confirmed) return;
+      setShowRentalTypeConfirm(true);
+      return;
     }
 
+    doSubmit();
+  }
+
+  async function doSubmit() {
+    setShowRentalTypeConfirm(false);
     setError("");
     setSubmitting(true);
     try {
@@ -133,7 +139,17 @@ function PropertyForm() {
   }
 
   if (loading) {
-    return <p className="p-6 text-gray-500">Caricamento...</p>;
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-10 flex-1 w-full flex flex-col gap-4">
+        <Skeleton className="h-4 w-32" />
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-4">
+          <Skeleton className="h-7 w-1/2" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -335,6 +351,17 @@ function PropertyForm() {
           </div>
         )}
       </Card>
+
+      <Modal
+        open={showRentalTypeConfirm}
+        title="Cambiare tipo di affitto?"
+        confirmLabel="Continua"
+        onConfirm={doSubmit}
+        onCancel={() => setShowRentalTypeConfirm(false)}
+      >
+        Le fasce di visita già create resteranno salvate ma non saranno più mostrate finché
+        l'immobile è impostato su "breve termine". Continuare?
+      </Modal>
     </div>
   );
 }

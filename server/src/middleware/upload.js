@@ -2,6 +2,7 @@ import multer from "multer";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
+import AppError from "../utils/AppError.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const UPLOADS_DIR = path.join(__dirname, "..", "..", "uploads");
@@ -16,7 +17,7 @@ const storage = multer.diskStorage({
 
 function fileFilter(req, file, cb) {
   if (!file.mimetype.startsWith("image/")) {
-    return cb(new Error("Sono ammesse solo immagini"));
+    return cb(new AppError(400, "INVALID_FILE_TYPE", "Sono ammesse solo immagini"));
   }
   cb(null, true);
 }

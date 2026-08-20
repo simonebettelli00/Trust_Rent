@@ -9,10 +9,12 @@ export function ConversationsProvider({ children }) {
   const { token, user } = useAuth();
   const { socket } = useSocket();
   const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     if (!token) {
       setConversations([]);
+      setLoading(false);
       return;
     }
     try {
@@ -20,6 +22,8 @@ export function ConversationsProvider({ children }) {
       setConversations(conversations);
     } catch {
       // ignora: la lista verrà ritentata al prossimo refresh
+    } finally {
+      setLoading(false);
     }
   }, [token]);
 
@@ -75,7 +79,7 @@ export function ConversationsProvider({ children }) {
 
   return (
     <ConversationsContext.Provider
-      value={{ conversations, totalUnread, refresh, markConversationReadLocally }}
+      value={{ conversations, totalUnread, loading, refresh, markConversationReadLocally }}
     >
       {children}
     </ConversationsContext.Provider>
