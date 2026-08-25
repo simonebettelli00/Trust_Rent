@@ -1,5 +1,6 @@
 import * as propertyService from "../services/propertyService.js";
 import * as propertyImageModel from "../models/propertyImageModel.js";
+import * as bookingService from "../services/bookingService.js";
 import AppError from "../utils/AppError.js";
 
 function mapPayload(body) {
@@ -96,8 +97,8 @@ export async function getOne(req, res, next) {
 
 export async function getAvailability(req, res, next) {
   try {
-    const availability = await propertyService.getAvailability(Number(req.params.id));
-    res.json({ availability });
+    const availability = await bookingService.getAvailability(Number(req.params.id));
+    res.json(availability);
   } catch (err) {
     next(err);
   }

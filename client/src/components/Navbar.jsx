@@ -1,13 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useConversations } from "../context/ConversationsContext";
+import { useNotifications } from "../context/NotificationsContext";
 import Button from "./Button";
 
 function Navbar() {
   const { user, logout } = useAuth();
   const { totalUnread } = useConversations();
+  const { totalUnread: totalUnreadNotifications } = useNotifications();
   const navigate = useNavigate();
   const areaPath = user?.role === "owner" ? "/owner" : "/app";
+  const requestsPath = user?.role === "owner" ? "/owner/requests" : "/app/requests";
 
   function handleLogout() {
     logout();
@@ -23,6 +26,17 @@ function Navbar() {
 
         {user ? (
           <div className="flex items-center gap-3">
+            <Link
+              to={requestsPath}
+              className="relative text-sm font-medium text-gray-700 hover:text-primary-700"
+            >
+              Richieste
+              {totalUnreadNotifications > 0 && (
+                <span className="absolute -top-2 -right-3 bg-secondary-600 text-white text-[10px] rounded-full px-1.5 py-0.5">
+                  {totalUnreadNotifications}
+                </span>
+              )}
+            </Link>
             <Link to="/messages" className="relative text-sm font-medium text-gray-700 hover:text-primary-700">
               Messaggi
               {totalUnread > 0 && (

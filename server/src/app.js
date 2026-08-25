@@ -5,6 +5,9 @@ import authRoutes from "./routes/authRoutes.js";
 import propertyRoutes from "./routes/propertyRoutes.js";
 import geocodeRoutes from "./routes/geocodeRoutes.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
+import appointmentRoutes from "./routes/appointmentRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import { UPLOADS_DIR } from "./middleware/upload.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
 
@@ -24,6 +27,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/geocode", geocodeRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

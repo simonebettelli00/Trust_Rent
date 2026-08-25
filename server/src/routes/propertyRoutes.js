@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as propertyController from "../controllers/propertyController.js";
 import * as ownerSlotController from "../controllers/ownerSlotController.js";
+import * as blockedPeriodController from "../controllers/blockedPeriodController.js";
 import { authRequired, requireRole } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import upload from "../middleware/upload.js";
@@ -14,6 +15,10 @@ import {
   propertySearchQuerySchema,
   slotBodySchema,
 } from "../validation/propertySchemas.js";
+import {
+  blockedPeriodBodySchema,
+  blockedPeriodParamsSchema,
+} from "../validation/blockedPeriodSchemas.js";
 
 const router = Router();
 const ownerOnly = [authRequired, requireRole("owner")];
@@ -79,6 +84,25 @@ router.delete(
   ...ownerOnly,
   validate({ params: propertySlotParamsSchema }),
   ownerSlotController.remove
+);
+
+router.get(
+  "/:id/blocked-periods",
+  ...ownerOnly,
+  validate({ params: propertyIdParamsSchema }),
+  blockedPeriodController.list
+);
+router.post(
+  "/:id/blocked-periods",
+  ...ownerOnly,
+  validate({ params: propertyIdParamsSchema, body: blockedPeriodBodySchema }),
+  blockedPeriodController.create
+);
+router.delete(
+  "/:id/blocked-periods/:blockedPeriodId",
+  ...ownerOnly,
+  validate({ params: blockedPeriodParamsSchema }),
+  blockedPeriodController.remove
 );
 
 export default router;

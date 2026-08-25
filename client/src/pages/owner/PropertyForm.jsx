@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import * as propertiesApi from "../../api/propertiesApi";
+import * as blockedPeriodsApi from "../../api/blockedPeriodsApi";
 import Card from "../../components/Card";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 import FurnishingsCheckboxes from "../../components/FurnishingsCheckboxes";
 import ImageUploader from "../../components/ImageUploader";
 import SlotManager from "../../components/SlotManager";
+import BlockedPeriodManager from "../../components/BlockedPeriodManager";
 import Skeleton from "../../components/Skeleton";
 import Modal from "../../components/Modal";
 
@@ -48,6 +50,7 @@ function PropertyForm() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [images, setImages] = useState([]);
   const [slots, setSlots] = useState([]);
+  const [blockedPeriods, setBlockedPeriods] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -58,8 +61,8 @@ function PropertyForm() {
 
   useEffect(() => {
     if (!isEdit) return;
-    Promise.all([propertiesApi.getOne(id), propertiesApi.getSlots(id)])
-      .then(([{ property, images }, { slots }]) => {
+    Promise.all([propertiesApi.getOne(id), propertiesApi.getSlots(id), blockedPeriodsApi.list(token, id)])
+      .then(([{ property, images }, { slots }, { blockedPeriods }]) => {
         setForm({
           title: property.title,
           description: property.description || "",
@@ -78,6 +81,7 @@ function PropertyForm() {
         });
         setImages(images);
         setSlots(slots);
+        setBlockedPeriods(blockedPeriods);
         originalRentalType.current = property.rental_type || "long";
         setGeocodePrecision(
           property.lat != null && property.lng != null
@@ -347,6 +351,17 @@ function PropertyForm() {
               token={token}
               slots={slots}
               onSlotsChange={setSlots}
+            />
+          </div>
+        )}
+
+        {form.rentalType === "short" && (
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <BlockedPeriodManager
+              propertyId={id ? Number(id) : null}
+              token={token}
+              periods={blockedPeriods}
+              onPeriodsChange={setBlockedPeriods}
             />
           </div>
         )}

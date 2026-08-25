@@ -1,43 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/style.css";
 import { useAuth } from "../context/AuthContext";
 import * as propertiesApi from "../api/propertiesApi";
 import * as conversationsApi from "../api/conversationsApi";
 import { OPTIONS as FURNISHING_OPTIONS } from "../components/FurnishingsCheckboxes";
 import ImageGallery from "../components/ImageGallery";
 import PropertyMiniMap from "../components/PropertyMiniMap";
+import VisitRequestForm from "../components/VisitRequestForm";
+import BookingRequestForm from "../components/BookingRequestForm";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import Skeleton from "../components/Skeleton";
 
 const FURNISHING_LABELS = Object.fromEntries(FURNISHING_OPTIONS.map((o) => [o.value, o.label]));
 
-const STATUS_LABELS = {
-  available: "Disponibile",
-  booked: "Prenotato",
-  blocked: "Non disponibile",
-};
-
-function groupAvailabilityByStatus(availability) {
-  const groups = { available: [], booked: [], blocked: [] };
-  for (const entry of availability) {
-    const date = new Date(entry.date);
-    if (groups[entry.status]) groups[entry.status].push(date);
-  }
-  return groups;
-}
-
 function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, token } = useAuth();
-  const calendarRef = useRef(null);
+  const requestRef = useRef(null);
 
   const [property, setProperty] = useState(null);
   const [images, setImages] = useState([]);
-  const [availability, setAvailability] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [contacting, setContacting] = useState(false);
@@ -45,11 +29,11 @@ function PropertyDetail() {
   useEffect(() => {
     setLoading(true);
     setError("");
-    Promise.all([propertiesApi.getOne(id), propertiesApi.getAvailability(id)])
-      .then(([detail, availabilityRes]) => {
+    propertiesApi
+      .getOne(id)
+      .then((detail) => {
         setProperty(detail.property);
         setImages(detail.images);
-        setAvailability(availabilityRes.availability);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -76,12 +60,12 @@ function PropertyDetail() {
     }
   }
 
-  function handleRequestAppointment() {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function scrollToRequestPanel() {
+    requestRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleRequireLogin() {
+    navigate("/login");
   }
 
   if (loading) {
@@ -107,7 +91,8 @@ function PropertyDetail() {
   if (!property) return null;
 
   const furnishings = property.furnishings || [];
-  const modifiers = groupAvailabilityByStatus(availability);
+  const isLongTerm = property.rental_type === "long";
+  const isTenant = user?.role === "tenant";
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 flex-1 w-full flex flex-col gap-8">
@@ -160,7 +145,7 @@ function PropertyDetail() {
                 <span className="text-gray-400 block">Deposito</span>
                 {property.deposit ? `€ ${Number(property.deposit).toLocaleString("it-IT")}` : "—"}
               </div>
-              {property.available_from && (
+              {isLongTerm && property.available_from && (
                 <div>
                   <span className="text-gray-400 block">Disponibile da</span>
                   {new Date(property.available_from).toLocaleDateString("it-IT")}
@@ -190,31 +175,26 @@ function PropertyDetail() {
             </div>
           )}
 
-          <div ref={calendarRef}>
+          <div ref={requestRef}>
             <Card>
-              <h2 className="font-semibold text-gray-900 mb-3">Disponibilità</h2>
-              <DayPicker
-                modifiers={modifiers}
-                modifiersClassNames={{
-                  available: "!bg-secondary-100 !text-secondary-700 rounded-full",
-                  booked: "!bg-red-100 !text-red-600 rounded-full",
-                  blocked: "!bg-gray-200 !text-gray-400 rounded-full",
-                }}
-              />
-              <div className="flex gap-4 text-xs text-gray-600 mt-3">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-secondary-100 inline-block" />
-                  {STATUS_LABELS.available}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-red-100 inline-block" />
-                  {STATUS_LABELS.booked}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full bg-gray-200 inline-block" />
-                  {STATUS_LABELS.blocked}
-                </span>
-              </div>
+              <h2 className="font-semibold text-gray-900 mb-3">
+                {isLongTerm ? "Richiedi una visita" : "Prenota un periodo"}
+              </h2>
+              {isLongTerm ? (
+                <VisitRequestForm
+                  propertyId={property.id}
+                  token={token}
+                  isTenant={isTenant}
+                  onRequireLogin={handleRequireLogin}
+                />
+              ) : (
+                <BookingRequestForm
+                  propertyId={property.id}
+                  token={token}
+                  isTenant={isTenant}
+                  onRequireLogin={handleRequireLogin}
+                />
+              )}
             </Card>
           </div>
         </div>
@@ -228,8 +208,8 @@ function PropertyDetail() {
             <Button variant="primary" onClick={handleContact} loading={contacting}>
               Contatta il proprietario
             </Button>
-            <Button variant="outline" onClick={handleRequestAppointment}>
-              Richiedi appuntamento
+            <Button variant="outline" onClick={scrollToRequestPanel}>
+              {isLongTerm ? "Richiedi visita" : "Prenota periodo"}
             </Button>
           </Card>
         </div>

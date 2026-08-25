@@ -2,6 +2,12 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import * as conversationService from "../services/conversationService.js";
 
+let ioInstance = null;
+
+function userRoom(userId) {
+  return `user:${userId}`;
+}
+
 function authenticateSocket(socket, next) {
   const token = socket.handshake.auth?.token;
   if (!token) {
@@ -19,11 +25,13 @@ function initSocket(httpServer) {
   const io = new Server(httpServer, {
     cors: { origin: process.env.CLIENT_URL },
   });
+  ioInstance = io;
 
   io.use(authenticateSocket);
 
   io.on("connection", (socket) => {
     const userId = socket.data.user.id;
+    socket.join(userRoom(userId));
 
     socket.on("join:conversation", async (conversationId) => {
       try {
@@ -64,6 +72,17 @@ function initSocket(httpServer) {
   });
 
   return io;
+}
+
+/**
+ * Invia un evento realtime a un utente specifico (tutte le sue connessioni
+ * attive), usato dai controller REST per notificare senza passare da una
+ * conversazione. No-op silenzioso se il socket non è ancora inizializzato
+ * (es. in ambiente di test, dove non si avvia mai initSocket).
+ */
+export function emitToUser(userId, event, payload) {
+  if (!ioInstance) return;
+  ioInstance.to(userRoom(userId)).emit(event, payload);
 }
 
 export default initSocket;

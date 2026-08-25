@@ -26,3 +26,11 @@ export async function findById(id) {
 export async function remove(id) {
   await pool.query("DELETE FROM owner_slots WHERE id = $1", [id]);
 }
+
+export async function setOpen(id, isOpen) {
+  const result = await pool.query(
+    "UPDATE owner_slots SET is_open = $1 WHERE id = $2 RETURNING *",
+    [isOpen, id]
+  );
+  return result.rows[0] || null;
+}
