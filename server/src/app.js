@@ -10,10 +10,15 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { UPLOADS_DIR } from "./middleware/upload.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
+import { globalLimiter } from "./middleware/rateLimiters.js";
 
 dotenv.config();
 
 const app = express();
+
+// Necessario per ottenere il vero IP del client quando dietro un reverse proxy
+// (es. Nginx, load balancer). Da adattare (numero di hop o lista IP) in produzione.
+app.set("trust proxy", 1);
 
 app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());
@@ -22,6 +27,8 @@ app.use("/uploads", express.static(UPLOADS_DIR));
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/api", globalLimiter);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/properties", propertyRoutes);

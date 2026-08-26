@@ -16,7 +16,10 @@ export async function apiFetch(path, { method = "GET", body, token } = {}) {
 
   if (!res.ok) {
     const message = data?.error?.message || "Errore di rete";
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = res.status;
+    error.code = data?.error?.code;
+    throw error;
   }
 
   return data;

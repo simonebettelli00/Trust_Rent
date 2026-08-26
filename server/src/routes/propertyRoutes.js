@@ -4,6 +4,7 @@ import * as ownerSlotController from "../controllers/ownerSlotController.js";
 import * as blockedPeriodController from "../controllers/blockedPeriodController.js";
 import { authRequired, requireRole } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
+import { searchLimiter } from "../middleware/rateLimiters.js";
 import upload from "../middleware/upload.js";
 import {
   propertyIdParamsSchema,
@@ -24,7 +25,12 @@ const router = Router();
 const ownerOnly = [authRequired, requireRole("owner")];
 
 router.get("/mine", ...ownerOnly, propertyController.getMine);
-router.get("/", validate({ query: propertySearchQuerySchema }), propertyController.search);
+router.get(
+  "/",
+  searchLimiter,
+  validate({ query: propertySearchQuerySchema }),
+  propertyController.search
+);
 router.get("/:id", validate({ params: propertyIdParamsSchema }), propertyController.getOne);
 router.get(
   "/:id/availability",

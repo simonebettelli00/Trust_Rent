@@ -21,7 +21,9 @@ function Login() {
       const user = await login({ email, password });
       navigate(user.role === "owner" ? "/owner" : "/app");
     } catch (err) {
-      setError(err.message);
+      setError(
+        err.status === 429 ? "Troppi tentativi, riprova tra qualche minuto" : err.message
+      );
     } finally {
       setSubmitting(false);
     }
