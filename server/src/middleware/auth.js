@@ -12,8 +12,11 @@ export function authRequired(req, res, next) {
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
-  } catch {
-    next(new AppError(401, "INVALID_TOKEN", "Token non valido o scaduto"));
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return next(new AppError(401, "TOKEN_EXPIRED", "Token scaduto"));
+    }
+    next(new AppError(401, "INVALID_TOKEN", "Token non valido"));
   }
 }
 

@@ -17,3 +17,11 @@ export function login({ email, password }) {
 export function me(token) {
   return apiFetch("/api/auth/me", { token });
 }
+
+export function refresh() {
+  return apiFetch("/api/auth/refresh", { method: "POST", skipAuthRetry: true });
+}
+
+export function logout() {
+  return apiFetch("/api/auth/logout", { method: "POST", skipAuthRetry: true });
+}

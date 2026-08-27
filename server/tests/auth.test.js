@@ -9,7 +9,6 @@ const TEST_PASSWORD = "password123";
 describe("Autenticazione", () => {
   afterAll(async () => {
     await pool.query("DELETE FROM users WHERE email = $1", [TEST_EMAIL]);
-    await pool.end();
   });
 
   it("registra un nuovo utente e non espone mai password_hash", async () => {
@@ -70,5 +69,73 @@ describe("Autenticazione", () => {
 
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe("INVALID_CREDENTIALS");
+  });
+});
+
+describe("Refresh token e logout", () => {
+  const email = `vitest.refresh.${Date.now()}@trustrent.local`;
+  const password = "password123";
+
+  afterAll(async () => {
+    await pool.query("DELETE FROM users WHERE email = $1", [email]);
+    await pool.end();
+  });
+
+  function extractRefreshCookie(res) {
+    const setCookie = res.headers["set-cookie"] || [];
+    const cookie = setCookie.find((c) => c.startsWith("refresh_token="));
+    return cookie.split(";")[0];
+  }
+
+  it("il login imposta un cookie refresh_token httpOnly", async () => {
+    const res = await request(app)
+      .post("/api/auth/register")
+      .send({ email, password, full_name: "Vitest Refresh", role: "tenant" });
+
+    expect(res.status).toBe(201);
+    const setCookie = res.headers["set-cookie"] || [];
+    const cookie = setCookie.find((c) => c.startsWith("refresh_token="));
+    expect(cookie).toBeTruthy();
+    expect(cookie.toLowerCase()).toContain("httponly");
+  });
+
+  it("rifiuta il refresh senza cookie", async () => {
+    const res = await request(app).post("/api/auth/refresh");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("NO_REFRESH_TOKEN");
+  });
+
+  it("effettua rotation del refresh token e rifiuta il riuso di quello vecchio", async () => {
+    const loginRes = await request(app).post("/api/auth/login").send({ email, password });
+    const firstCookie = extractRefreshCookie(loginRes);
+
+    const refreshRes = await request(app)
+      .post("/api/auth/refresh")
+      .set("Cookie", firstCookie);
+    expect(refreshRes.status).toBe(200);
+    expect(refreshRes.body.token).toBeTruthy();
+    const secondCookie = extractRefreshCookie(refreshRes);
+    expect(secondCookie).not.toBe(firstCookie);
+
+    const reuseRes = await request(app).post("/api/auth/refresh").set("Cookie", firstCookie);
+    expect(reuseRes.status).toBe(401);
+    expect(reuseRes.body.error.code).toBe("REFRESH_REUSED");
+
+    // La family è stata revocata per intero: anche il token appena ruotato non funziona più.
+    const afterReuseRes = await request(app)
+      .post("/api/auth/refresh")
+      .set("Cookie", secondCookie);
+    expect(afterReuseRes.status).toBe(401);
+  });
+
+  it("il logout revoca il refresh token corrente", async () => {
+    const loginRes = await request(app).post("/api/auth/login").send({ email, password });
+    const cookie = extractRefreshCookie(loginRes);
+
+    const logoutRes = await request(app).post("/api/auth/logout").set("Cookie", cookie);
+    expect(logoutRes.status).toBe(204);
+
+    const refreshRes = await request(app).post("/api/auth/refresh").set("Cookie", cookie);
+    expect(refreshRes.status).toBe(401);
   });
 });

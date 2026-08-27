@@ -1,35 +1,45 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import * as authApi from "../api/authApi";
+import { configureAuth } from "../api/client";
 
 const AuthContext = createContext(null);
-const TOKEN_KEY = "trust_rent_token";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  function clearSession() {
+    setUser(null);
+    setToken(null);
+  }
 
+  // Il client HTTP centralizzato deve poter aggiornare l'access token in
+  // memoria dopo un refresh silenzioso, o segnalare che la sessione è finita.
+  useEffect(() => {
+    configureAuth({
+      onTokenRefreshed: setToken,
+      onAuthFailure: clearSession,
+    });
+  }, []);
+
+  // All'avvio non si assume più un vecchio token: si tenta un refresh
+  // silenzioso basato sul cookie httpOnly, così l'access token non deve mai
+  // essere persistito lato client.
+  useEffect(() => {
     authApi
-      .me(token)
-      .then(({ user }) => setUser(user))
-      .catch(() => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem(TOKEN_KEY);
+      .refresh()
+      .then(({ user, token }) => {
+        setUser(user);
+        setToken(token);
       })
+      .catch(() => clearSession())
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   function persistSession({ user, token }) {
     setUser(user);
     setToken(token);
-    localStorage.setItem(TOKEN_KEY, token);
   }
 
   async function login(credentials) {
@@ -44,10 +54,12 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
-  function logout() {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem(TOKEN_KEY);
+  async function logout() {
+    try {
+      await authApi.logout();
+    } finally {
+      clearSession();
+    }
   }
 
   return (

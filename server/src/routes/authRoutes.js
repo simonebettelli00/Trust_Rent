@@ -3,7 +3,7 @@ import * as authController from "../controllers/authController.js";
 import { authRequired } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { registerSchema, loginSchema } from "../validation/authSchemas.js";
-import { loginLimiter, registerLimiter } from "../middleware/rateLimiters.js";
+import { loginLimiter, registerLimiter, refreshLimiter } from "../middleware/rateLimiters.js";
 
 const router = Router();
 
@@ -14,6 +14,9 @@ router.post(
   authController.register
 );
 router.post("/login", loginLimiter, validate({ body: loginSchema }), authController.login);
+router.post("/refresh", refreshLimiter, authController.refresh);
+router.post("/logout", authController.logout);
+router.post("/logout-all", authRequired, authController.logoutAll);
 router.get("/me", authRequired, authController.me);
 
 export default router;
