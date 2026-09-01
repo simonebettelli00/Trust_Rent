@@ -11,11 +11,18 @@ function rateLimitedResponse(req, res) {
   });
 }
 
+// Nei test (Fase 14) tante richieste legittime partono dalla stessa IP in
+// pochi secondi (supertest): i limiter restano configurati identici a
+// produzione ma vengono bypassati, per non testare il rate limiting stesso
+// (già coperto dal test live della Fase 11) insieme a tutto il resto.
+const skipInTest = () => process.env.NODE_ENV === "test";
+
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: rateLimitedResponse,
 });
 
@@ -26,6 +33,7 @@ export const searchLimiter = rateLimit({
   limit: 600,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: rateLimitedResponse,
 });
 
@@ -35,6 +43,7 @@ export const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  skip: skipInTest,
   handler: rateLimitedResponse,
 });
 
@@ -43,6 +52,7 @@ export const registerLimiter = rateLimit({
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: rateLimitedResponse,
 });
 
@@ -51,5 +61,6 @@ export const refreshLimiter = rateLimit({
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: rateLimitedResponse,
 });

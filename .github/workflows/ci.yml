@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  server-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Configura le variabili d'ambiente per i test
+        run: |
+          cat > .env.test <<EOF
+          DATABASE_URL=postgres://postgres:postgres@localhost:5432/trust_rent_test
+          JWT_SECRET=ci-test-secret
+          PORT=4001
+          CLIENT_URL=http://localhost:5173
+          ACCESS_TOKEN_TTL=15m
+          REFRESH_TOKEN_TTL_DAYS=30
+          EOF
+
+      - name: Esegue i test (crea/migra il DB di test in automatico)
+        run: npm test
+
+  client-checks:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Installa le dipendenze
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

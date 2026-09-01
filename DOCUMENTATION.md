@@ -386,15 +386,47 @@ di `blocked_periods`; per i `long` ritorna range vuoti (la disponibilità
 
 ## 9. Test
 
-`server/tests/` (Vitest + Supertest, contro il DB reale configurato in
-`DATABASE_URL`, con pulizia automatica dei dati creati):
-- `auth.test.js` — registrazione (successo, email duplicata, dati non
-  validi), login (successo, credenziali errate), nessuna esposizione di
-  `password_hash`.
-- `properties.test.js` — validazione bounds obbligatori, ricerca valida,
-  filtro `maxPrice`.
+`server/tests/` (Vitest + Supertest), contro un **database di test dedicato**
+(`trust_rent_test`, mai il DB di sviluppo), configurato via `server/.env.test`
+(vedi `.env.test.example`) e creato/migrato in automatico dallo script
+`pretest` (`scripts/setup-test-db.js`) prima di ogni run. I limiter di
+rate-limiting (Fase 11) sono disattivati sotto `NODE_ENV=test` per non
+interferire con la creazione rapida di utenti nei test.
 
-`npm test` nella cartella `server/`.
+Isolamento: non ci sono transazioni con rollback per singolo test (i model
+usano `pool.query` direttamente, non un client condiviso iniettabile) — i
+test usano identificatori univoci e un `globalSetup` (`tests/global.js`) fa
+il `TRUNCATE` di tutte le tabelle applicative una sola volta, a fine intera
+run.
+
+File di test:
+- `auth.test.js` — registrazione/login, refresh token (rotation, riuso
+  rilevato e revocato), logout.
+- `properties.test.js` — ricerca per bounds/prezzo/stanze; CRUD (creazione
+  solo owner, modifica/eliminazione solo del proprietario, dettaglio
+  pubblico, `GET /mine` filtrato).
+- `conversations.test.js` — creazione idempotente, accesso negato a chi non
+  partecipa, storico messaggi.
+- `upload.test.js` — associazione immagini a `property_images`, rifiuto
+  file non-immagine e oversize (>5MB), ownership.
+- `geocode.test.js` — Nominatim mockato (nessuna chiamata di rete reale),
+  risultato trovato, indirizzo non trovato, servizio non raggiungibile.
+- `appointments.test.js` / `bookings.test.js` — richiesta → accettazione
+  (auto-declina i concorrenti, chiude lo slot) → rifiuto; sovrapposizione
+  periodi rifiutata (`PERIOD_OVERLAP`).
+- `security.test.js` — nessuna esposizione di `password_hash`/token, 401
+  senza JWT, 403 su rotta per ruolo sbagliato.
+
+Aree ancora scoperte: eventi Socket.io in tempo reale (invio messaggi,
+notifiche push) e il comportamento del client HTTP (retry automatico su
+token scaduto) — verificati finora solo manualmente/con Playwright, non da
+test automatici.
+
+Comandi (cartella `server/`): `npm test` (esegue anche `pretest`),
+`npm run test:watch`.
+
+CI: `.github/workflows/ci.yml` esegue i test server (con Postgres+PostGIS
+come servizio) e lint+build del client su ogni push/PR.
 
 ## 10. Sicurezza
 
